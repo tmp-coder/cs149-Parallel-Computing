@@ -249,7 +249,37 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   // Your solution should work for any value of
   // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
   //
+  __cs149_vec_float res,reg_x;
+  __cs149_vec_int reg_exp,ONE=_cs149_vset_int(1);
+  __cs149_mask selected,not_zero;
+  float TEN = 9.999999f;
+  __cs149_vec_float TRUNCATED= _cs149_vset_float(9.999999f);
+  __cs149_vec_int ZERO = _cs149_vset_int(0);
+  // const int MULTIPLE_BOUND = N - (N % VECTOR_WIDTH); // last index i % VECTOR_WIDTH=0
   
+  for(int i=0 ; i< N; i+= VECTOR_WIDTH){
+    int N_SELECT = std::min(i+VECTOR_WIDTH,N) - i;
+    selected = _cs149_init_ones(N_SELECT);
+    _cs149_vload_float(reg_x,values+i,selected);    // x = val[i]
+    _cs149_vload_int(reg_exp,exponents+i,selected); // exp = exp[i]
+
+    // _cs149_veq_int(is_zero,reg_exp,ZERO,selected);  // if exp[i] == 0
+    _cs149_vset_float(res,1.0f,selected);            // res[i] = 1
+    // not_zero = _cs149_mask_not(is_zero);            // else
+    not_zero = _cs149_init_ones();
+    not_zero = _cs149_mask_not(not_zero);// not_zero = : 0...0
+    _cs149_vgt_int(not_zero,reg_exp,ZERO,selected);//only effect elements be selected
+    // _cs149_vmove_float(res,reg_x,not_zero);
+    while (_cs149_cntbits(not_zero) >0)             
+    {
+      _cs149_vmult_float(res,res,reg_x,not_zero);
+      _cs149_vsub_int(reg_exp,reg_exp,ONE,not_zero);
+      _cs149_vgt_int(not_zero,reg_exp,ZERO,not_zero);
+    }
+    _cs149_vgt_float(not_zero,res,TRUNCATED,selected);//if res[i] > 9.99999f
+    _cs149_vset_float(res,TEN,not_zero);              // res[i] = 9.999999f
+    _cs149_vstore_float(output+i,res,selected);
+  }
 }
 
 // returns the sum of all elements in values
@@ -270,11 +300,32 @@ float arraySumVector(float* values, int N) {
   //
   // CS149 STUDENTS TODO: Implement your vectorized version of arraySumSerial here
   //
-  
-  for (int i=0; i<N; i+=VECTOR_WIDTH) {
+  float ans =0;
 
+  __cs149_mask selected;
+  __cs149_vec_float reg_x;
+
+  for (int i=0; i<N; i+=VECTOR_WIDTH) {
+    int N_SELECT = VECTOR_WIDTH;
+    if(i+VECTOR_WIDTH > N)
+      N_SELECT = N-i;
+    selected = _cs149_init_ones(N_SELECT);
+    reg_x = _cs149_vset_float(0);
+    _cs149_vload_float(reg_x,values+i,selected);
+
+    int vec_width = VECTOR_WIDTH;
+    
+    while (vec_width > 1)
+    {
+
+      // add
+      _cs149_hadd_float(reg_x,reg_x);
+      _cs149_interleave_float(reg_x,reg_x);
+      vec_width >>=1;
+    }
+    ans += reg_x.value[0];
   }
 
-  return 0.0;
+  return ans;
 }
 
