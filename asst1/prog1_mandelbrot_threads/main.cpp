@@ -4,7 +4,7 @@
 
 #include "CycleTimer.h"
 
-extern void mandelbrotSerial(
+extern int mandelbrotSerial(
     float x0, float y0, float x1, float y1,
     int width, int height,
     int startRow, int numRows,
