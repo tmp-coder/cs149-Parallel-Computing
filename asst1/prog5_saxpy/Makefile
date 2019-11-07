@@ -2,14 +2,14 @@ CXX=g++ -m64
 CXXFLAGS=-I../common -Iobjs/ -O2 -Wall
 ISPC=ispc
 # note: requires AVX2
-ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64
+ISPCFLAGS=-O3 --target=avx2-i32x16 --arch=x86-64 --pic --addressing=64
 
 APP_NAME=saxpy
 OBJDIR=objs
 COMMONDIR=../common
 
 TASKSYS_CXX=$(COMMONDIR)/tasksys.cpp
-TASKSYS_LIB=-lpthread
+TASKSYS_LIB=-lpthread -lopenblas
 TASKSYS_OBJ=$(addprefix $(OBJDIR)/, $(subst $(COMMONDIR)/,, $(TASKSYS_CXX:.cpp=.o)))
 
 default: $(APP_NAME)

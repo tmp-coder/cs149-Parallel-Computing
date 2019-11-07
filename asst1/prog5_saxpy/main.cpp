@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <algorithm>
+#include <cblas.h>
 
 #include "CycleTimer.h"
 #include "saxpy_ispc.h"
@@ -40,7 +41,7 @@ int main() {
         arrayY[i] = i;
         result[i] = 0.f;
     }
-
+    
     //
     // Run the serial implementation. Repeat three times for robust
     // timing.
@@ -53,10 +54,25 @@ int main() {
         minSerial = std::min(minSerial, endTime - startTime);
     }
 
-// printf("[saxpy serial]:\t\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
-    //       minSerial * 1000,
-    //       toBW(TOTAL_BYTES, minSerial),
-    //       toGFLOPS(TOTAL_FLOPS, minSerial));
+    double minBLAS = 1e30;
+    
+    for (int i = 0; i < 3; ++i) {
+        double startTime =CycleTimer::currentSeconds();
+        // for(int i=0 ; i< N ; ++i)result[i]=arrayY[i];
+        memcpy(result,arrayY,N); // simulate
+        cblas_saxpy(N,scale,arrayX,1,result,1);
+        double endTime = CycleTimer::currentSeconds();
+        minBLAS = std::min(minBLAS, endTime - startTime);
+    }
+    printf("[saxpy openblas]:\t\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
+            minBLAS * 1000,
+            toBW(TOTAL_BYTES, minBLAS),
+            toGFLOPS(TOTAL_FLOPS, minBLAS));
+
+    printf("[saxpy serial]:\t\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
+            minSerial * 1000,
+            toBW(TOTAL_BYTES, minSerial),
+            toGFLOPS(TOTAL_FLOPS, minSerial));
 
     // Clear out the buffer
     for (unsigned int i = 0; i < N; ++i)
@@ -99,8 +115,8 @@ int main() {
            toGFLOPS(TOTAL_FLOPS, minTaskISPC));
 
     printf("\t\t\t\t(%.2fx speedup from use of tasks)\n", minISPC/minTaskISPC);
-    //printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
-    //printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
+    printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
+    printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
 
     delete[] arrayX;
     delete[] arrayY;
