@@ -84,7 +84,8 @@ int main() {
     double minISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
         double startTime = CycleTimer::currentSeconds();
-        saxpy_ispc(N, scale, arrayX, arrayY, result);
+        memcpy(result,arrayY,N);
+        saxpy_ispc(N, scale, arrayX, result);
         double endTime = CycleTimer::currentSeconds();
         minISPC = std::min(minISPC, endTime - startTime);
     }
@@ -104,7 +105,8 @@ int main() {
     double minTaskISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
         double startTime = CycleTimer::currentSeconds();
-        saxpy_ispc_withtasks(N, scale, arrayX, arrayY, result);
+        memcpy(result,arrayY,N);
+        saxpy_ispc_withtasks(N, scale, arrayX,result);
         double endTime = CycleTimer::currentSeconds();
         minTaskISPC = std::min(minTaskISPC, endTime - startTime);
     }
