@@ -18,6 +18,10 @@ static void verifyResult(int N, float* result, float* gold) {
     }
 }
 
+bool policy(const float a,const float b){
+    return fabs(a -1) < fabs(b-1);
+}
+
 int main() {
 
     const unsigned int N = 20 * 1000 * 1000;
@@ -36,6 +40,16 @@ int main() {
         // starter code populates array with random input values
         values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
     }
+    std::sort(values,values+N,policy);// very good case 7x speedup
+
+    constexpr uint32_t VEC_WIDTH = 16;
+
+    constexpr uint32_t GROUPS = (N + VEC_WIDTH -1) / VEC_WIDTH;
+
+    for(uint32_t i=0; i< GROUPS ; ++i)
+        std::swap(values[i*VEC_WIDTH], values[N - GROUPS+i]);
+
+
 
     // generate a gold version to check results
     for (unsigned int i=0; i<N; i++)
