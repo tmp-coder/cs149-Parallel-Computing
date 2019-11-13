@@ -68,10 +68,12 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
         std::mutex finish;
         std::condition_variable cv_finish;
         bool close;
+
+        void try_steal(int cur_thread,int steal_thread);
     public:
         TaskSystemParallelThreadPoolSpinning(int num_threads);
         ~TaskSystemParallelThreadPoolSpinning();
-        const char* name();
+        virtual const char* name();
         virtual void run(IRunnable* runnable, int num_total_tasks);
         TaskID runAsyncWithDeps(IRunnable* runnable, int num_total_tasks,
                                 const std::vector<TaskID>& deps);
@@ -84,12 +86,12 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
  * a thread pool. See definition of ITaskSystem in
  * itasksys.h for documentation of the ITaskSystem interface.
  */
-class TaskSystemParallelThreadPoolSleeping:public ITaskSystem {
+class TaskSystemParallelThreadPoolSleeping:public TaskSystemParallelThreadPoolSpinning {
     public:
         TaskSystemParallelThreadPoolSleeping(int num_threads);
         ~TaskSystemParallelThreadPoolSleeping();
         const char* name();
-        void run(IRunnable* runnable, int num_total_tasks);
+        // void run(IRunnable* runnable, int num_total_tasks);
         TaskID runAsyncWithDeps(IRunnable* runnable, int num_total_tasks,
                                 const std::vector<TaskID>& deps);
         void sync();

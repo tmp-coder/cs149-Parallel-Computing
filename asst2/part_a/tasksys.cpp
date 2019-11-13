@@ -259,7 +259,7 @@ const char* TaskSystemParallelThreadPoolSleeping::name() {
     return "Parallel + Thread Pool + Sleep";
 }
 
-TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(int num_threads): ITaskSystem(num_threads) {
+TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(int num_threads): TaskSystemParallelThreadPoolSpinning(num_threads) {
     //
     // TODO: CS149 student implementations may decide to perform setup
     // operations (such as thread pool construction) here.
@@ -269,21 +269,23 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(int n
     
 }
 
-TaskSystemParallelThreadPoolSleeping::~TaskSystemParallelThreadPoolSleeping() {}
-
-void TaskSystemParallelThreadPoolSleeping::run(IRunnable* runnable, int num_total_tasks) {
-
-
-    //
-    // TODO: CS149 students will modify the implementation of this
-    // method in Part A.  The implementation provided below runs all
-    // tasks sequentially on the calling thread.
-    //
-
-    for (int i = 0; i < num_total_tasks; i++) {
-        runnable->runTask(i, num_total_tasks);
-    }
+TaskSystemParallelThreadPoolSleeping::~TaskSystemParallelThreadPoolSleeping() {
+    
 }
+
+// void TaskSystemParallelThreadPoolSleeping::run(IRunnable* runnable, int num_total_tasks) {
+
+
+//     //
+//     // TODO: CS149 students will modify the implementation of this
+//     // method in Part A.  The implementation provided below runs all
+//     // tasks sequentially on the calling thread.
+//     //
+
+//     for (int i = 0; i < num_total_tasks; i++) {
+//         runnable->runTask(i, num_total_tasks);
+//     }
+// }
 
 TaskID TaskSystemParallelThreadPoolSleeping::runAsyncWithDeps(IRunnable* runnable, int num_total_tasks,
                                                     const std::vector<TaskID>& deps) {
