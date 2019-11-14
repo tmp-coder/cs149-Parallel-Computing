@@ -230,19 +230,6 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_tota
         std::unique_lock<std::mutex> lk(lk_done);
         cv_main.wait(lk,[this,num_total_tasks]{return done >=num_total_tasks || close;});
     }
-    // std::cout << "main wake \n";
-    // do{
-    //     int no_tasks = 0;
-    //     while(!queues[this->NUM_THREADS].empty()){
-    //         auto task  = queues[this->NUM_THREADS].front();
-    //         queues[this->NUM_THREADS].pop();
-    //         task();
-    //         no_tasks ++;
-    //     }
-    //     if(no_tasks > 0)
-    //         done+= no_tasks;
-    // }while(done < num_total_tasks);
-
 
 }
 
