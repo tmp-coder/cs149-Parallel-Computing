@@ -63,10 +63,10 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
         std::vector<std::mutex *> lks;
         std::vector<std::queue<std::function<void()>>> queues;
         int NUM_THREADS;
-        void enqueue(const std::function<void()> & task);
+        void enqueue(int taskId,const std::function<void()> & task);
         void init();
-        std::mutex finish;
-        std::condition_variable cv_finish;
+        std::mutex finish,lk_done;
+        std::condition_variable cv_finish,cv_main;
         bool close;
 
         void try_steal(int cur_thread,int steal_thread);

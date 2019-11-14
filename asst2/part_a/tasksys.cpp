@@ -165,27 +165,36 @@ void TaskSystemParallelThreadPoolSpinning::init(){
                 return;
             if(no_tasks>0)
                 done+= no_tasks;
+            if(queues[thread_idx].empty())
             {
+                if(no_tasks >0)
+                {
+                    std::lock_guard<std::mutex> lk(lk_done);    
+                    cv_main.notify_one();
+                }
                 std::unique_lock<std::mutex> lk(finish);
+                // cv_finish.notify_all();
+                // std::cout << "i'sleep "<< thread_idx << "left tasks " << queues[thread_idx].size() << "\n";
                 cv_finish.wait(lk,[this,thread_idx]{return !queues[thread_idx].empty() || close;});
             }
         }
     };
     for(int i=0 ; i<this->NUM_THREADS ; ++i){
-        std::queue<std::function<void()>> q;
-        queues.emplace_back(std::move(q));
+        queues.emplace_back(std::queue<std::function<void()>>());
         // std::mutex m;
         lks.emplace_back(new std::mutex);
         workers.emplace_back(
             std::thread(work_fun,i)
         );
     }
+    queues.emplace_back(std::queue<std::function<void()>>());
 }
 
 
 TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {
     close = true;// change statu,then notifyall,
     cv_finish.notify_all();
+    cv_main.notify_all();
     for(int i=0 ; i<NUM_THREADS ; ++i)
         if(workers[i].joinable()){
             // std::cout << "i'm join id:" << i << "\n";
@@ -193,46 +202,48 @@ TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {
         }
 }
 
-void TaskSystemParallelThreadPoolSpinning::enqueue(const std::function<void()>& task){
+void TaskSystemParallelThreadPoolSpinning::enqueue(int taskId,const std::function<void()>& task){
     // power of 2 trick
     int q1 = std::rand() % (NUM_THREADS -1);
-    int q2 = std::rand() % (NUM_THREADS - q1) +q1;
-    if(queues[q1].size() > queues[q2].size())
+    int q2 = std::rand() % (NUM_THREADS - q1 ) +q1;
+    if(q1 != q2 && queues[q1].size() > queues[q2].size())
         std::swap(q1,q2);
-
+    // int q1 = taskId % NUM_THREADS;
     queues[q1].push(task);
 }
 
 void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_total_tasks) {
 
-
-    //
-    // TODO: CS149 students will modify the implementation of this
-    // method in Part A.  The implementation provided below runs all
-    // tasks sequentially on the calling thread.
-    //
-
-    // for (int i = 0; i < num_total_tasks; i++) {
-    //     runnable->runTask(i, num_total_tasks);
-    // }
     init();
     for(int i=0; i< num_total_tasks ; ++i){
         auto task = [runnable,i,num_total_tasks]{runnable->runTask(i,num_total_tasks);};
-        enqueue(task);
+        enqueue(i,task);
     }
     
-    int x =0;
-    // std::cout << "num_tasks = "<< num_total_tasks << "\n";
-    do{
-        cv_finish.notify_all();
-        x = done.load(std::memory_order_relaxed);
-        // std::cout <<"done = "<< x << "\n";
-    }while (x < num_total_tasks);
-    // std::cout << "i'm done!" << x << " "<< num_total_tasks <<'\n';
-    // {
-    //     std::unique_lock<std::mutex> lk(finish);
-    //     cv_finish.wait(lk,[this,num_total_tasks]{return done>=num_total_tasks;});
-    // }
+    {
+        std::lock_guard<std::mutex> lk(finish);
+        cv_finish.notify_all(); 
+    }
+    
+    {
+        // std::cout << "main sleep\n";
+        std::unique_lock<std::mutex> lk(lk_done);
+        cv_main.wait(lk,[this,num_total_tasks]{return done >=num_total_tasks || close;});
+    }
+    // std::cout << "main wake \n";
+    // do{
+    //     int no_tasks = 0;
+    //     while(!queues[this->NUM_THREADS].empty()){
+    //         auto task  = queues[this->NUM_THREADS].front();
+    //         queues[this->NUM_THREADS].pop();
+    //         task();
+    //         no_tasks ++;
+    //     }
+    //     if(no_tasks > 0)
+    //         done+= no_tasks;
+    // }while(done < num_total_tasks);
+
+
 }
 
 TaskID TaskSystemParallelThreadPoolSpinning::runAsyncWithDeps(IRunnable* runnable, int num_total_tasks,
