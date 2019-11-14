@@ -161,10 +161,10 @@ void TaskSystemParallelThreadPoolSpinning::init(){
                 task();
                 no_tasks ++;
             }
-            if(close)
-                return;
             if(no_tasks>0)
                 done+= no_tasks;
+            if(close)
+                return;
             if(queues[thread_idx].empty())
             {
                 if(no_tasks >0)
