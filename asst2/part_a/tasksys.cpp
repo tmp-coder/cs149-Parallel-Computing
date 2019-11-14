@@ -146,7 +146,6 @@ TaskSystemParallelThreadPoolSpinning::TaskSystemParallelThreadPoolSpinning(int n
 }
 
 void TaskSystemParallelThreadPoolSpinning::init(){
-    done = 0;
     if(!workers.empty())
         return;
     
@@ -162,16 +161,18 @@ void TaskSystemParallelThreadPoolSpinning::init(){
                 no_tasks ++;
             }
             if(no_tasks>0)
-                done+= no_tasks;
+            {
+                done-= no_tasks;
+                if(done==0){
+                    std::lock_guard<std::mutex> lk(lk_done);
+                    cv_main.notify_one();
+                }
+            }
             if(close)
                 return;
             if(queues[thread_idx].empty())
             {
-                if(no_tasks >0)
-                {
-                    std::lock_guard<std::mutex> lk(lk_done);    
-                    cv_main.notify_one();
-                }
+                
                 std::unique_lock<std::mutex> lk(finish);
                 // cv_finish.notify_all();
                 // std::cout << "i'sleep "<< thread_idx << "left tasks " << queues[thread_idx].size() << "\n";
@@ -215,6 +216,7 @@ void TaskSystemParallelThreadPoolSpinning::enqueue(int taskId,const std::functio
 void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_total_tasks) {
 
     init();
+    done = num_total_tasks;
     for(int i=0; i< num_total_tasks ; ++i){
         auto task = [runnable,i,num_total_tasks]{runnable->runTask(i,num_total_tasks);};
         enqueue(i,task);
@@ -228,7 +230,7 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_tota
     {
         // std::cout << "main sleep\n";
         std::unique_lock<std::mutex> lk(lk_done);
-        cv_main.wait(lk,[this,num_total_tasks]{return done >=num_total_tasks || close;});
+        cv_main.wait(lk,[this]{return done <=0 || close;});
     }
 
 }
