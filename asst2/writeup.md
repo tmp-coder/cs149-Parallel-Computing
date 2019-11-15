@@ -1,3 +1,20 @@
+title: 多线程任务调度系统
+
+# feature
+
+1. thread pool 支持
+2. sync/async 调度支持
+3. 工作队列 lock-free支持
+4. 有向图任务调度支持
+5. 无任务 sleeping 支持
+
+
+# 一些思考
+
+1. 当总任务非常少，执行很快的时候，任务调度系统性能甚至还没有直接线性执行好，(原因: 额外计算，e.g. 原子访问，线程创建/切换)
+2. lock-free 的代价(主从线程串行执行，work queue，无lock；work-stealing无法实现，不过会减少额外开销)
+3. 关于是否应该对work queue加锁，以实现更大的并发，如果运行的任务都是一些长时间任务，加锁代价不是很大，可行，以实现高并发和work-stealing。
+
 ```
 ================================================================================
 Running task system grading harness... (22 total tests)
