@@ -1,5 +1,30 @@
 title: 多线程任务调度系统
 
+- [目录说明](#%e7%9b%ae%e5%bd%95%e8%af%b4%e6%98%8e)
+- [build](#build)
+- [feature](#feature)
+- [一些思考](#%e4%b8%80%e4%ba%9b%e6%80%9d%e8%80%83)
+
+# 目录说明
+
+```
+C:.
+├─common // 公共lib
+├─figs 
+├─part_a // 无用，以merge到partb
+├─part_b // task schduler system
+├─tests //test
+└─tutorial
+```
+
+# build
+
+```sh
+cd part_b
+make
+python ../test/run_test_harness.py -a # 执行所有test包括 async
+```
+
 # feature
 
 1. thread pool 支持
